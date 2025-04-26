@@ -5,31 +5,30 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class MedicureService {
-	
-	@Autowired
-	MedicureRepository doctorRepository;
-	
-	public Doctor registerDoctor(Doctor doctor) {
-		return doctorRepository.save(doctor);
-		}
 
-	public Doctor createDoctor() {
-		Doctor doctor = new Doctor("MP1110","Shubham","Neurologist","15 Years");
-		return doctorRepository.save(doctor);
-	}
+    @Autowired
+    private MedicureRepository medicureRepository;
 
-	public Doctor getDoctorDetails(String doctorRegistrationId) {
-		// TODO Auto-generated method stub
-		return doctorRepository.findById(doctorRegistrationId).get();
-	}
-	
-	public Doctor registerDummyDoctor() {
-		Doctor doctor = new Doctor("MP1110","Shubham","Neurologist","15 Years");
-		return doctor;
-	}
-	
-	public String sayHello() {
-		return "Hello from Doctor Shubham";
-	}
+    public Doctor registerDoctor(Doctor doctor) {
+        return medicureRepository.save(doctor);
+    }
 
+    public Doctor updateDoctor(Long doctorRegNo, Doctor doctorDetails) {
+        Doctor doctor = medicureRepository.findById(doctorRegNo)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+        doctor.setDoctorName(doctorDetails.getDoctorName());
+        doctor.setSpecialization(doctorDetails.getSpecialization());
+        doctor.setPhoneNumber(doctorDetails.getPhoneNumber());
+        return medicureRepository.save(doctor);
+    }
+
+    public Doctor searchDoctor(String doctorName) {
+        return medicureRepository.findByDoctorName(doctorName)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+    }
+
+    public void deleteDoctor(Long doctorRegNo) {
+        medicureRepository.deleteById(doctorRegNo);
+    }
 }
+

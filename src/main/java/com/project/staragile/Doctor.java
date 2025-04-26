@@ -5,61 +5,56 @@ import javax.persistence.Id;
 
 @Entity
 public class Doctor {
-	
-	@Id
-	private String doctorRegistrationId;
-	
-	private String doctorName;
-	
-	private String doctorSpeciality;
-	
-	private String doctorExperience;
 
-	public Doctor(String doctorRegistrationId, String doctorName, String doctorSpeciality, String doctorExperience) {
-		super();
-		this.doctorRegistrationId = doctorRegistrationId;
-		this.doctorName = doctorName;
-		this.doctorSpeciality = doctorSpeciality;
-		this.doctorExperience = doctorExperience;
-	}
+    @Id
+    private Long doctorRegNo;
+    private String doctorName;
+    private String specialization;
+    private String phoneNumber;
 
-	public Doctor() {
-		super();
-		// TODO Auto-generated constructor stub
-	}
+    // 🛠 Default constructor (required for JPA)
+    public Doctor() {
+    }
 
-	public String getDoctorRegistrationId() {
-		return doctorRegistrationId;
-	}
+    // 🛠 Parameterized constructor (required for your object creation)
+    public Doctor(Long doctorRegNo, String doctorName, String specialization, String phoneNumber) {
+        this.doctorRegNo = doctorRegNo;
+        this.doctorName = doctorName;
+        this.specialization = specialization;
+        this.phoneNumber = phoneNumber;
+    }
 
-	public void setDoctorRegistrationId(String doctorRegistrationId) {
-		this.doctorRegistrationId = doctorRegistrationId;
-	}
+    // Getters and Setters
+    public Long getDoctorRegNo() {
+        return doctorRegNo;
+    }
 
-	public String getDoctorName() {
-		return doctorName;
-	}
+    public void setDoctorRegNo(Long doctorRegNo) {
+        this.doctorRegNo = doctorRegNo;
+    }
 
-	public void setDoctorName(String doctorName) {
-		this.doctorName = doctorName;
-	}
+    public String getDoctorName() {
+        return doctorName;
+    }
 
-	public String getDoctorSpeciality() {
-		return doctorSpeciality;
-	}
+    public void setDoctorName(String doctorName) {
+        this.doctorName = doctorName;
+    }
 
-	public void setDoctorSpeciality(String doctorSpeciality) {
-		this.doctorSpeciality = doctorSpeciality;
-	}
+    public String getSpecialization() {
+        return specialization;
+    }
 
-	public String getDoctorExperience() {
-		return doctorExperience;
-	}
+    public void setSpecialization(String specialization) {
+        this.specialization = specialization;
+    }
 
-	public void setDoctorExperience(String doctorExperience) {
-		this.doctorExperience = doctorExperience;
-	}
-	
-	
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
 
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
 }
+
