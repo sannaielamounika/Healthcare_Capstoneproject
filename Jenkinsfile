@@ -9,23 +9,10 @@ pipeline {
     }
 
     stages {
-        stage('Install kubectl') {
-            steps {
-                script {
-                    // Install kubectl
-                    sh """
-                    curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-                    chmod +x ./kubectl
-                    mkdir -p /usr/local/bin  // Create bin directory if it doesn't exist
-                    mv ./kubectl /usr/local/bin/kubectl  // Move kubectl to /usr/local/bin
-                    """
-                }
-            }
-        }
-
         stage('Configure kubectl') {
             steps {
                 script {
+                    // Assuming kubectl is installed manually, configure kubectl
                     sh """
                     aws eks --region ${AWS_REGION} update-kubeconfig --name healthcare-cluster
                     """
