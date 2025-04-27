@@ -13,7 +13,7 @@ variable "AWS_SECRET_ACCESS_KEY" {
 variable "AWS_REGION" {
   description = "The AWS region"
   type        = string
-  default     = "us-east-1"  # Modify as per your region
+  default     = "us-east-1"
 }
 
 provider "aws" {
@@ -22,18 +22,42 @@ provider "aws" {
   secret_key = var.AWS_SECRET_ACCESS_KEY
 }
 
+# ✅ Automatically fetch subnets from your VPC
+data "aws_subnets" "selected" {
+  filter {
+    name   = "vpc-id"
+    values = ["vpc-07b4ac398e1b4c4d5"]
+  }
+}
+
+# ✅ Create a security group
+resource "aws_security_group" "eks" {
+  name        = "eks-sg"
+  description = "Allow all inbound traffic for EKS"
+  vpc_id      = "vpc-07b4ac398e1b4c4d5"
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# ✅ Create EKS cluster using the fetched subnets
 resource "aws_eks_cluster" "main" {
   name     = "healthcare-cluster"
   role_arn = "arn:aws:iam::774305615726:role/eks-service-role"
 
   vpc_config {
-    subnet_ids = ["subnet-12345678", "subnet-87654321"]
+    subnet_ids         = data.aws_subnets.selected.ids
+    security_group_ids = [aws_security_group.eks.id]
   }
 }
-
-resource "aws_security_group" "eks" {
-  name        = "eks-sg"
-  description = "Allow all inbound traffic"
-  vpc_id      = "vpc-12345678"
-}
-
