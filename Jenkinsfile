@@ -13,11 +13,11 @@ pipeline {
             steps {
                 script {
                     // Install kubectl
-                    sh '''
+                    sh '''#!/bin/bash
                     curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
                     chmod +x ./kubectl
-                    mkdir -p ~/bin  // Create bin directory if it doesn't exist
-                    mv ./kubectl ~/bin/kubectl  // Move kubectl to ~/bin
+                    mkdir -p /usr/local/bin  // Create bin directory if it doesn't exist
+                    mv ./kubectl /usr/local/bin/kubectl  // Move kubectl to /usr/local/bin
                     '''
                 }
             }
@@ -26,7 +26,7 @@ pipeline {
         stage('Configure kubectl') {
             steps {
                 script {
-                    sh '''
+                    sh '''#!/bin/bash
                     aws eks --region ${AWS_REGION} update-kubeconfig --name healthcare-cluster
                     '''
                 }
@@ -49,7 +49,7 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh '''
+                        sh '''#!/bin/bash
                             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
                             docker build -t ${IMAGE_NAME} . 
                             docker tag ${IMAGE_NAME} $DOCKER_USERNAME/${IMAGE_NAME}:${BUILD_NUMBER}
@@ -69,7 +69,7 @@ pipeline {
                         [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key-id'] 
                     ]) {
                         dir('terraform') {
-                            sh '''
+                            sh '''#!/bin/bash
                                 terraform init
                                 terraform apply -auto-approve \
                                     -var="AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" \
