@@ -1,0 +1,20 @@
+---
+- name: Provision Kubernetes Cluster
+  hosts: k8s_nodes
+  become: yes
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+    - name: Install kubeadm
+      apt:
+        name: kubeadm
+        state: present
+    - name: Initialize Kubernetes Cluster
+      shell: kubeadm init --pod-network-cidr=192.168.0.0/16
+    - name: Set up kubeconfig
+      shell: "export KUBEVIRT_KUBEVIRT_VERSION=latest"
+      environment:
+        KUBEVIRT_KUBEVIRT_VERSION: "v0.46.1"
+
