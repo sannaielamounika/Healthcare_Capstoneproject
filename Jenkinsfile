@@ -15,7 +15,7 @@ pipeline {
                     sh """
                     curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
                     chmod +x ./kubectl
-                    sudo mv ./kubectl /usr/local/bin/kubectl
+                    mv ./kubectl ~/bin/kubectl
                     """
                 }
             }
