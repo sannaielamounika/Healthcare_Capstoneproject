@@ -5,7 +5,6 @@ pipeline {
         GIT_REPO = 'https://github.com/sannaielamounika/Healthcare_Capstoneproject.git'
         IMAGE_NAME = 'healthcare-app'
         AWS_REGION = 'us-east-1'
-        CLUSTER_NAME = 'healthcare-cluster'
     }
 
     stages {
@@ -44,19 +43,14 @@ pipeline {
                     withCredentials([
                         [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key-id']
                     ]) {
-                        withEnv([
-                            "AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID}",
-                            "AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY}",
-                            "AWS_DEFAULT_REGION=${AWS_REGION}"
-                        ]) {
-                            sh "aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME"
-
-                            dir('terraform') {
-                                sh '''
-                                    terraform init
-                                    terraform apply -auto-approve
-                                '''
-                            }
+                        dir('terraform') {
+                            sh """
+                                terraform init
+                                terraform apply -auto-approve \
+                                    -var="AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" \
+                                    -var="AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
+                                    -var="AWS_REGION=$AWS_REGION"
+                            """
                         }
                     }
                 }
@@ -99,3 +93,5 @@ pipeline {
         }
     }
 }
+
+
