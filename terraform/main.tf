@@ -22,11 +22,17 @@ provider "aws" {
   secret_key = var.AWS_SECRET_ACCESS_KEY
 }
 
-# ✅ Automatically fetch subnets from your VPC
+# ✅ Automatically fetch subnets from your VPC in supported availability zones
 data "aws_subnets" "selected" {
   filter {
     name   = "vpc-id"
     values = ["vpc-07b4ac398e1b4c4d5"]
+  }
+
+  # Ensure subnets are in supported availability zones for EKS
+  filter {
+    name   = "availabilityZone"
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"]
   }
 }
 
@@ -61,3 +67,4 @@ resource "aws_eks_cluster" "main" {
     security_group_ids = [aws_security_group.eks.id]
   }
 }
+
