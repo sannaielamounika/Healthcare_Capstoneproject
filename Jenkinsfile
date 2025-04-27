@@ -13,12 +13,12 @@ pipeline {
             steps {
                 script {
                     // Install kubectl
-                    sh """
+                    sh '''
                     curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
                     chmod +x ./kubectl
                     mkdir -p ~/bin  // Create bin directory if it doesn't exist
                     mv ./kubectl ~/bin/kubectl  // Move kubectl to ~/bin
-                    """
+                    '''
                 }
             }
         }
@@ -26,9 +26,9 @@ pipeline {
         stage('Configure kubectl') {
             steps {
                 script {
-                    sh """
+                    sh '''
                     aws eks --region ${AWS_REGION} update-kubeconfig --name healthcare-cluster
-                    """
+                    '''
                 }
             }
         }
@@ -49,14 +49,14 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh """
+                        sh '''
                             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
                             docker build -t ${IMAGE_NAME} . 
                             docker tag ${IMAGE_NAME} $DOCKER_USERNAME/${IMAGE_NAME}:${BUILD_NUMBER}
                             docker push $DOCKER_USERNAME/${IMAGE_NAME}:${BUILD_NUMBER}
                             docker tag ${IMAGE_NAME} $DOCKER_USERNAME/${IMAGE_NAME}:latest
                             docker push $DOCKER_USERNAME/${IMAGE_NAME}:latest
-                        """
+                        '''
                     }
                 }
             }
@@ -69,13 +69,13 @@ pipeline {
                         [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key-id'] 
                     ]) {
                         dir('terraform') {
-                            sh """
+                            sh '''
                                 terraform init
                                 terraform apply -auto-approve \
                                     -var="AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" \
                                     -var="AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
                                     -var="AWS_REGION=$AWS_REGION"
-                            """
+                            '''
                         }
                     }
                 }
