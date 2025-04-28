@@ -1,38 +1,71 @@
+variable "AWS_ACCESS_KEY_ID" {
+  description = "The AWS access key"
+  type        = string
+  sensitive   = true
+}
+
+variable "AWS_SECRET_ACCESS_KEY" {
+  description = "The AWS secret access key"
+  type        = string
+  sensitive   = true
+}
+
+variable "AWS_REGION" {
+  description = "The AWS region"
+  type        = string
+  default     = "us-east-1"
+}
+
 provider "aws" {
-  region = "us-east-1" # Replace with your AWS region
+  region     = var.AWS_REGION
+  access_key = var.AWS_ACCESS_KEY_ID
+  secret_key = var.AWS_SECRET_ACCESS_KEY
 }
 
-# Ensure the VPC exists
-data "aws_vpc" "selected" {
-  id = "vpc-07b4ac398e1b4c4d5" # Replace with your VPC ID
+# ✅ Automatically fetch subnets from your VPC in supported availability zones
+data "aws_subnets" "selected" {
+  filter {
+    name   = "vpc-id"
+    values = ["vpc-07b4ac398e1b4c4d5"]
+  }
+
+  # Ensure subnets are in supported availability zones for EKS
+  filter {
+    name   = "availabilityZone"
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"]
+  }
 }
 
-# Check if the security group exists or create it
+# ✅ Create a security group
 resource "aws_security_group" "eks" {
   name        = "eks-sg"
-  description = "Security Group for EKS"
-  vpc_id      = data.aws_vpc.selected.id
+  description = "Allow all inbound traffic for EKS"
+  vpc_id      = "vpc-07b4ac398e1b4c4d5"
 
   ingress {
     from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
     from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
 
-  tags = {
-    Name = "eks-sg"
+# ✅ Create EKS cluster using the fetched subnets
+resource "aws_eks_cluster" "main" {
+  name     = "healthcare-cluster"
+  role_arn = "arn:aws:iam::774305615726:role/eks-service-role"
+
+  vpc_config {
+    subnet_ids         = data.aws_subnets.selected.ids
+    security_group_ids = [aws_security_group.eks.id]
   }
 }
 
-# Optional: Adding an output for debugging
-output "security_group_id" {
-  value = aws_security_group.eks.id
-}
+
