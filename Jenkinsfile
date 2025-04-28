@@ -41,7 +41,7 @@ pipeline {
         stage('Terraform: Provision Infrastructure') {
             steps {
                 script {
-                    withCredentials([[ 
+                    withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding',
                         credentialsId: 'aws-access-key-id'
                     ]]) {
@@ -119,10 +119,16 @@ pipeline {
         stage('Monitor with Prometheus & Grafana') {
             steps {
                 script {
-                    sh """
-                        kubectl apply -f prometheus/prometheus-deployment.yaml
-                        kubectl apply -f grafana/grafana-deployment.yaml
-                    """
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-access-key-id'
+                    ]]) {
+                        sh """
+                            aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME
+                            kubectl apply -f prometheus/prometheus-deployment.yaml
+                            kubectl apply -f grafana/grafana-deployment.yaml
+                        """
+                    }
                 }
             }
         }
