@@ -76,8 +76,19 @@ pipeline {
 
         stage('Kubernetes Deployment') {
             steps {
-                sh 'kubectl apply -f k8s/deployment.yaml'
-                sh 'kubectl apply -f k8s/service.yaml'
+                script {
+                    // Pass AWS credentials to kubectl
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-access-key-id'
+                    ]]) {
+                        sh """
+                            aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME
+                            kubectl apply -f k8s/deployment.yaml
+                            kubectl apply -f k8s/service.yaml
+                        """
+                    }
+                }
             }
         }
 
