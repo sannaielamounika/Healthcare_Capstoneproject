@@ -41,10 +41,7 @@ pipeline {
         stage('Terraform: Provision Infrastructure') {
             steps {
                 script {
-                    withCredentials([[
-                        $class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-access-key-id'
-                    ]]) {
+                    withCredentials([[ $class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key-id' ]]) {
                         dir('terraform') {
                             sh """
                                 terraform init
@@ -62,10 +59,7 @@ pipeline {
         stage('Update Kubeconfig') {
             steps {
                 script {
-                    withCredentials([[
-                        $class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-access-key-id'
-                    ]]) {
+                    withCredentials([[ $class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key-id' ]]) {
                         sh """
                             aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME
                         """
@@ -77,10 +71,7 @@ pipeline {
         stage('Kubernetes Deployment') {
             steps {
                 script {
-                    withCredentials([[
-                        $class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-access-key-id'
-                    ]]) {
+                    withCredentials([[ $class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key-id' ]]) {
                         sh """
                             aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME
                             kubectl apply -f k8s/deployment.yaml
@@ -97,25 +88,19 @@ pipeline {
                     sh """
                         docker network create selenium-grid || true
 
-                        # Stop and remove existing containers if they exist
                         docker ps -a -q -f name=selenium-hub | grep -q . && docker rm -f selenium-hub || true
                         docker ps -a -q -f name=chrome-node | grep -q . && docker rm -f chrome-node || true
 
-                        # Run selenium-hub container
                         docker run -d --name selenium-hub --network selenium-grid selenium/hub:latest
 
-                        # Run chrome-node container
                         docker run -d --name chrome-node --network selenium-grid \
                             -e SE_EVENT_BUS_HOST=selenium-hub \
                             -e SE_EVENT_BUS_PUBLISH_PORT=4442 \
                             -e SE_EVENT_BUS_SUBSCRIBE_PORT=4443 \
                             selenium/node-chrome:latest
 
-                        # Optional: wait for grid to be ready
                         sleep 10
 
-                        # If you have Selenium tests to run, place them here.
-                        # Example: docker run --rm --network selenium-grid your-selenium-test-image
                         echo "Selenium Grid is up. Please configure test execution separately."
                     """
                 }
@@ -125,10 +110,7 @@ pipeline {
         stage('Monitor with Prometheus & Grafana') {
             steps {
                 script {
-                    withCredentials([[
-                        $class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-access-key-id'
-                    ]]) {
+                    withCredentials([[ $class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key-id' ]]) {
                         sh """
                             aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME
                             kubectl apply -f prometheus/prometheus-deployment.yaml
@@ -139,9 +121,16 @@ pipeline {
             }
         }
 
-        stage('Deploy to Production') {
+        stage('Deploy to Production') {   // 🔥 Corrected this stage
             steps {
-                sh 'kubectl apply -f k8s/production-deployment.yaml'
+                script {
+                    withCredentials([[ $class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key-id' ]]) {
+                        sh """
+                            aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME
+                            kubectl apply -f k8s/production-deployment.yaml
+                        """
+                    }
+                }
             }
         }
     }
