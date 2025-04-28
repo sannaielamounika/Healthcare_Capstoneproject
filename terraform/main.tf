@@ -36,12 +36,13 @@ data "aws_subnets" "selected" {
   }
 }
 
-# ✅ Create a security group
+# ✅ Import the existing security group
 resource "aws_security_group" "eks" {
   name        = "eks-sg"
   description = "Allow all inbound traffic for EKS"
   vpc_id      = "vpc-07b4ac398e1b4c4d5"
 
+  # Existing security group rules
   ingress {
     from_port   = 0
     to_port     = 0
@@ -67,4 +68,3 @@ resource "aws_eks_cluster" "main" {
     security_group_ids = [aws_security_group.eks.id]
   }
 }
-
