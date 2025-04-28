@@ -41,9 +41,9 @@ pipeline {
         stage('Terraform: Provision Infrastructure') {
             steps {
                 script {
-                    withCredentials([[ 
-                        $class: 'AmazonWebServicesCredentialsBinding', 
-                        credentialsId: 'aws-access-key-id' 
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-access-key-id'
                     ]]) {
                         dir('terraform') {
                             sh """
@@ -62,9 +62,9 @@ pipeline {
         stage('Update Kubeconfig') {
             steps {
                 script {
-                    withCredentials([[ 
-                        $class: 'AmazonWebServicesCredentialsBinding', 
-                        credentialsId: 'aws-access-key-id' 
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-access-key-id'
                     ]]) {
                         sh """
                             aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME

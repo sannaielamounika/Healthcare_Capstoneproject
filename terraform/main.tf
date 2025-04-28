@@ -22,23 +22,22 @@ provider "aws" {
   secret_key = var.AWS_SECRET_ACCESS_KEY
 }
 
-# ✅ Check if security group already exists
-data "aws_security_group" "eks" {
-  filter {
-    name   = "group-name"
-    values = ["eks-sg"]
-  }
-
-  # Ensure that this is only valid for your specific VPC
+# ✅ Fetch subnets from your VPC in supported availability zones
+data "aws_subnets" "selected" {
   filter {
     name   = "vpc-id"
     values = ["vpc-07b4ac398e1b4c4d5"]
   }
+
+  # Ensure subnets are in supported availability zones for EKS
+  filter {
+    name   = "availabilityZone"
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"]
+  }
 }
 
-# ✅ If security group doesn't exist, create it
+# ✅ Create a security group (Updated to avoid duplicate)
 resource "aws_security_group" "eks" {
-  count       = length(data.aws_security_group.eks.id) == 0 ? 1 : 0
   name        = "eks-sg"
   description = "Allow all inbound traffic for EKS"
   vpc_id      = "vpc-07b4ac398e1b4c4d5"
@@ -56,6 +55,10 @@ resource "aws_security_group" "eks" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "eks-sg"
+  }
 }
 
 # ✅ Create EKS cluster using the fetched subnets
@@ -65,20 +68,6 @@ resource "aws_eks_cluster" "main" {
 
   vpc_config {
     subnet_ids         = data.aws_subnets.selected.ids
-    security_group_ids = [aws_security_group.eks[0].id]
+    security_group_ids = [aws_security_group.eks.id]  # Ensure correct referencing
   }
 }
-
-# ✅ Fetch subnets from your VPC
-data "aws_subnets" "selected" {
-  filter {
-    name   = "vpc-id"
-    values = ["vpc-07b4ac398e1b4c4d5"]
-  }
-
-  filter {
-    name   = "availabilityZone"
-    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"]
-  }
-}
-
