@@ -5,7 +5,7 @@ pipeline {
         GIT_REPO = 'https://github.com/sannaielamounika/Healthcare_Capstoneproject.git'
         IMAGE_NAME = 'healthcare-app'
         AWS_REGION = 'us-east-1'
-        CLUSTER_NAME = 'healthcare-cluster' // Add your cluster name here
+        CLUSTER_NAME = 'healthcare-cluster'
     }
 
     stages {
@@ -47,7 +47,10 @@ pipeline {
                         dir('terraform') {
                             sh """
                                 terraform init
-                                terraform apply -auto-approve
+                                terraform apply -auto-approve \
+                                    -var "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" \
+                                    -var "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" \
+                                    -var "AWS_REGION=$AWS_REGION"
                             """
                         }
                     }
@@ -55,17 +58,24 @@ pipeline {
             }
         }
 
-        stage('Kubernetes Deployment') {
+        stage('Update Kubeconfig') {
             steps {
                 script {
                     withCredentials([
                         [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key-id']
                     ]) {
-                        sh "aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME"
-                        sh 'kubectl apply -f k8s/deployment.yaml'
-                        sh 'kubectl apply -f k8s/service.yaml'
+                        sh """
+                            aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME
+                        """
                     }
                 }
+            }
+        }
+
+        stage('Kubernetes Deployment') {
+            steps {
+                sh 'kubectl apply -f k8s/deployment.yaml'
+                sh 'kubectl apply -f k8s/service.yaml'
             }
         }
 
@@ -77,26 +87,14 @@ pipeline {
 
         stage('Monitor with Prometheus & Grafana') {
             steps {
-                script {
-                    withCredentials([
-                        [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key-id']
-                    ]) {
-                        sh 'kubectl apply -f prometheus/prometheus-deployment.yaml'
-                        sh 'kubectl apply -f grafana/grafana-deployment.yaml'
-                    }
-                }
+                sh 'kubectl apply -f prometheus/prometheus-deployment.yaml'
+                sh 'kubectl apply -f grafana/grafana-deployment.yaml'
             }
         }
 
         stage('Deploy to Production') {
             steps {
-                script {
-                    withCredentials([
-                        [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-access-key-id']
-                    ]) {
-                        sh 'kubectl apply -f k8s/production-deployment.yaml'
-                    }
-                }
+                sh 'kubectl apply -f k8s/production-deployment.yaml'
             }
         }
     }
