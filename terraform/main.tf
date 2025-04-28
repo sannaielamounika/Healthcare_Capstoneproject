@@ -1,42 +1,33 @@
-variable "AWS_ACCESS_KEY_ID" {
-  description = "The AWS access key"
-  type        = string
-  sensitive   = true
-}
-
-variable "AWS_SECRET_ACCESS_KEY" {
-  description = "The AWS secret access key"
-  type        = string
-  sensitive   = true
-}
-
-variable "AWS_REGION" {
-  description = "The AWS region"
-  type        = string
-  default     = "us-east-1"
-}
-
 provider "aws" {
-  region     = var.AWS_REGION
-  access_key = var.AWS_ACCESS_KEY_ID
-  secret_key = var.AWS_SECRET_ACCESS_KEY
+  region = "us-east-1"
 }
 
-# ✅ Fetch subnets from your VPC in supported availability zones
 data "aws_subnets" "selected" {
-  filter {
-    name   = "vpc-id"
-    values = ["vpc-07b4ac398e1b4c4d5"]
-  }
-
-  # Ensure subnets are in supported availability zones for EKS
-  filter {
-    name   = "availabilityZone"
-    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"]
-  }
+  vpc_id = "vpc-07b4ac398e1b4c4d5"
 }
 
-# ✅ Create a security group (Updated to avoid duplicate)
+data "aws_security_group" "eks" {
+  id = "sg-0ff4d28e49c926716"  # Updated with the actual Security Group ID
+}
+
+resource "aws_eks_cluster" "main" {
+  name     = "healthcare-cluster"
+  role_arn = "arn:aws:iam::774305615726:role/eks-service-role"
+
+  vpc_config {
+    subnet_ids         = data.aws_subnets.selected.ids
+    security_group_ids = [data.aws_security_group.eks.id]  # Reference the existing security group
+  }
+
+  # Cluster settings
+  kubernetes_network_config {
+    service_ipv4_cidr = "172.20.0.0/16"
+  }
+
+  # Specify the EKS version you want to use
+  version = "1.21"
+}
+
 resource "aws_security_group" "eks" {
   name        = "eks-sg"
   description = "Allow all inbound traffic for EKS"
@@ -54,20 +45,5 @@ resource "aws_security_group" "eks" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "eks-sg"
-  }
-}
-
-# ✅ Create EKS cluster using the fetched subnets
-resource "aws_eks_cluster" "main" {
-  name     = "healthcare-cluster"
-  role_arn = "arn:aws:iam::774305615726:role/eks-service-role"
-
-  vpc_config {
-    subnet_ids         = data.aws_subnets.selected.ids
-    security_group_ids = [aws_security_group.eks.id]  # Ensure correct referencing
   }
 }
