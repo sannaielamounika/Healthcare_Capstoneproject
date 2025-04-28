@@ -96,9 +96,15 @@ pipeline {
                 script {
                     sh """
                         docker network create selenium-grid || true
-                        
+
+                        # Stop and remove existing containers if they exist
+                        docker ps -a -q -f name=selenium-hub | grep -q . && docker rm -f selenium-hub || true
+                        docker ps -a -q -f name=chrome-node | grep -q . && docker rm -f chrome-node || true
+
+                        # Run selenium-hub container
                         docker run -d --name selenium-hub --network selenium-grid selenium/hub:latest
 
+                        # Run chrome-node container
                         docker run -d --name chrome-node --network selenium-grid \
                             -e SE_EVENT_BUS_HOST=selenium-hub \
                             -e SE_EVENT_BUS_PUBLISH_PORT=4442 \
