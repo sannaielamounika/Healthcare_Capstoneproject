@@ -31,11 +31,19 @@ data "aws_subnets" "selected" {
   }
 }
 
+# Check for the existing security group
 data "aws_security_group" "eks" {
   id = "sg-0ff4d28e49c926716"  # Existing security group ID for EKS
 }
 
+# Use existing EKS cluster if it already exists
+data "aws_eks_cluster" "existing" {
+  name = "healthcare-cluster"
+}
+
+# Use existing EKS cluster if it exists, else create a new one
 resource "aws_eks_cluster" "main" {
+  count    = length(data.aws_eks_cluster.existing) == 0 ? 1 : 0  # Only create if not existing
   name     = "healthcare-cluster"
   role_arn = "arn:aws:iam::774305615726:role/eks-service-role"
 
@@ -51,7 +59,9 @@ resource "aws_eks_cluster" "main" {
   version = "1.21"
 }
 
+# Use existing security group, or skip creation if it exists
 resource "aws_security_group" "eks" {
+  count       = length(data.aws_security_group.eks) == 0 ? 1 : 0  # Only create if not existing
   name        = "eks-sg"
   description = "Allow all inbound traffic for EKS"
   vpc_id      = "vpc-07b4ac398e1b4c4d5"
