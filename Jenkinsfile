@@ -77,7 +77,6 @@ pipeline {
         stage('Kubernetes Deployment') {
             steps {
                 script {
-                    // Pass AWS credentials to kubectl
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding',
                         credentialsId: 'aws-access-key-id'
@@ -94,14 +93,29 @@ pipeline {
 
         stage('Run Selenium Tests') {
             steps {
-                sh 'docker-compose -f selenium/docker-compose.yml up -d'
+                script {
+                    // Instead of docker-compose, use plain docker run
+                    sh """
+                        docker network create selenium-grid || true
+                        
+                        docker run -d --name selenium-hub --network selenium-grid selenium/hub:4.8.0-20230221
+
+                        docker run -d --name chrome-node --network selenium-grid -e SE_EVENT_BUS_HOST=selenium-hub -e SE_EVENT_BUS_PUBLISH_PORT=4442 -e SE_EVENT_BUS_SUBSCRIBE_PORT=4443 selenium/node-chrome:4.8.0-20230221
+
+                        docker run --rm --network selenium-grid your-selenium-test-image
+                    """
+                }
             }
         }
 
         stage('Monitor with Prometheus & Grafana') {
             steps {
-                sh 'kubectl apply -f prometheus/prometheus-deployment.yaml'
-                sh 'kubectl apply -f grafana/grafana-deployment.yaml'
+                script {
+                    sh """
+                        kubectl apply -f prometheus/prometheus-deployment.yaml
+                        kubectl apply -f grafana/grafana-deployment.yaml
+                    """
+                }
             }
         }
 
