@@ -23,8 +23,12 @@ provider "aws" {
   secret_key = var.AWS_SECRET_ACCESS_KEY
 }
 
+# Corrected data source for fetching subnets
 data "aws_subnets" "selected" {
-  vpc_id = "vpc-07b4ac398e1b4c4d5"
+  filter {
+    name   = "vpc-id"
+    values = ["vpc-07b4ac398e1b4c4d5"]  # Your VPC ID
+  }
 }
 
 data "aws_security_group" "eks" {
